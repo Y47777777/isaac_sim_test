@@ -150,7 +150,20 @@ def forklift_rotate(forward=True):
     euler_angles = numpy_utils.quats_to_euler_angles(quaternions=orint)
     euler_angles = euler_angles + np.array([0, 0, step], dtype=np.float32)
     orint = numpy_utils.euler_angles_to_quats(euler_angles=euler_angles)
-    my_forklift.set_world_pose(position=trans, orientation=orint)   
+    my_forklift.set_world_pose(position=trans, orientation=orint)     
+    
+def lift_move(up=True):
+    step = 0.02
+    if up == False:
+        step = -step
+    from omni.isaac.core.prims import XFormPrim
+    lift_prim_path = forkilft_prim_path + "/lift"
+    # lift_prim = get_prim_at_path(prim_path)
+    xform_prim = XFormPrim(prim_path=lift_prim_path)
+    trans, orint = xform_prim.get_world_pose()
+    print(trans, orint)
+    trans = trans + np.array([0, 0, step], dtype=np.float32)
+    xform_prim.set_world_pose(position=trans, orientation=orint)
     
 # callback
 def on_keyboard_event(event):
@@ -187,7 +200,17 @@ def on_keyboard_event(event):
             forklift_rotate(True) 
         #     my_forklift.apply_wheel_actions(my_controller.forward(command=[0, -20]))
         # elif event.type == carb.input.KeyboardEventType.KEY_RELEASE:
-        #     my_forklift.apply_wheel_actions(my_controller.forward(command=[0, 0]))       
+        #     my_forklift.apply_wheel_actions(my_controller.forward(command=[0, 0]))
+        
+    # key i pressed/released
+    elif event.input == carb.input.KeyboardInput.I:
+        if event.type == carb.input.KeyboardEventType.KEY_PRESS or event.type == carb.input.KeyboardEventType.KEY_REPEAT:
+            lift_move(True) 
+            
+    # key k pressed/released
+    elif event.input == carb.input.KeyboardInput.K:
+        if event.type == carb.input.KeyboardEventType.KEY_PRESS or event.type == carb.input.KeyboardEventType.KEY_REPEAT:
+            lift_move(False)     
     
     # key S pressed/released
     elif event.input == carb.input.KeyboardInput.S:
@@ -195,6 +218,7 @@ def on_keyboard_event(event):
             timestamp = time.time()
             save_camera_data(fork_camera, timestamp)
             save_lidar_data(fork_lidar, timestamp)
+
 
             
 
@@ -214,7 +238,7 @@ def add_fork_camera(world):
     diagonal_fov = 235  # in degrees, the diagonal field of view to be rendered
     
     fork_camera = world.scene.add(
-        Camera(prim_path="/World/forklift/lift/fork_camera", name="fork_camera", 
+        Camera(prim_path=fork_camera_prim_path, name="fork_camera", 
             translation=np.array([0.0, -80, 20]),
             resolution=(width, height),
             frequency=20,
@@ -257,7 +281,7 @@ def add_fork_camera(world):
 def add_fork_lidar(world):
     
     fork_lidar = world.scene.add(
-        LidarRtx(prim_path="/World/forklift/lift/fork_lidar", 
+        LidarRtx(prim_path=fork_lidar_prim_path, 
                  name="fork_lidar",
                  translation=np.array([0.0, -80, 20]),)
     )
@@ -279,7 +303,7 @@ def create_forklift(world):
     asset_path = assets_root_path + forklift_asset_path
     forklift = world.scene.add(
         WheeledRobot(
-            prim_path="/World/forklift",
+            prim_path=forkilft_prim_path,
             name="my_forklift",
             wheel_dof_names=["left_back_wheel_joint", "right_back_wheel_joint"],
             create_robot=True,
